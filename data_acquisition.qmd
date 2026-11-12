@@ -56,20 +56,26 @@ get_who_data <- function(indicator_code, variable_name) {
   records <- data$value
 
   as_tibble(records) |>
-    select(
-      country_code = SpatialDim,
-      year = TimeDim,
-      value = NumericValue,
-      low = Low,
-      high = High
+  filter(SpatialDimType == "COUNTRY") |>
+    filter(
+      is.na(Dim1Type) |
+        Dim1Type != "SEX" |
+        Dim1 == "SEX_BTSX"
     ) |>
-    mutate(year = as.integer(year)) |>
-    rename_with(
-      ~ c(variable_name,
-          paste0(variable_name, "_low"),
-          paste0(variable_name, "_high")),
-      c(value, low, high)
-    )
+  select(
+    country_code = SpatialDim,
+    year = TimeDim,
+    value = NumericValue,
+    low = Low,
+    high = High
+  ) |>
+  mutate(year = as.integer(year)) |>
+  rename_with(
+    ~ c(variable_name,
+        paste0(variable_name, "_low"),
+        paste0(variable_name, "_high")),
+    c(value, low, high)
+  )
 }
 ```
 
@@ -122,6 +128,9 @@ malaria_final <- malaria_cases |>
   relocate(disease, category, country_code, year)
 
 glimpse(malaria_final)
+
+
+
 ```
 
 ### Data Quality Checks
@@ -190,4 +199,224 @@ The data are retrieved from WHO's publicly accessible Global Health Observatory 
 ## Future Application
 
 The cleaned malaria dataset will be combined with tuberculosis and cholera data to support an interactive global infectious disease dashboard. Users will be able to explore disease statistics by country, year, and disease category.
-5
+
+## Tuberculosis Data Acquisition
+
+Tuberculosis (TB) is an infectious disease that primarily affects the lungs and spreads through the air. We retrieve estimated tuberculosis cases, deaths, incidence rates, and mortality rates from the WHO Global Health Observatory API.
+
+### Download Tuberculosis Indicators
+
+We use the `get_who_data()` function defined earlier to retrieve four indicators.
+
+```{r}
+# Estimated number of tuberculosis cases
+TB_cases <- get_who_data(
+  "TB_e_inc_num", "cases"
+)
+
+# Estimated tuberculosis deaths (excluding HIV-positive people)
+TB_deaths <- get_who_data(
+  "TB_e_mort_exc_tbhiv_num", "deaths"
+)
+
+# Tuberculosis incidence per 100,000 population
+TB_incidence <- get_who_data(
+  "MDG_0000000020", "incidence_rate"
+)
+
+# Tuberculosis mortality among HIV-negative people
+TB_mortality <- get_who_data(
+  "MDG_0000000017", "mortality_rate"
+)
+```
+
+## Tuberculosis Data Cleaning and Tidying
+
+We combine the four indicators by country and year using `full_join()`. This preserves country-year observations even when certain statistics are unavailable.
+
+```{r}
+# Combine tuberculosis indicators
+TB_final <- TB_cases |>
+  full_join(
+    TB_deaths,
+    by = c("country_code", "year")
+  ) |>
+  full_join(
+    TB_incidence,
+    by = c("country_code", "year")
+  ) |>
+  full_join(
+    TB_mortality,
+    by = c("country_code", "year")
+  ) |>
+  mutate(
+    disease = "Tuberculosis",
+    category = "Airborne & Respiratory"
+  ) |>
+  relocate(disease, category, country_code, year)
+
+glimpse(TB_final)
+```
+
+### Data Quality Checks
+
+We examine the dataset's coverage, check for duplicate country-year observations, and identify missing or negative values.
+
+```{r}
+# Dataset summary
+TB_final |>
+  summarise(
+    observations = n(),
+    countries = n_distinct(country_code),
+    first_year = min(year, na.rm = TRUE),
+    last_year = max(year, na.rm = TRUE)
+  )
+
+# Check for duplicate country-year observations
+TB_duplicates <- TB_final |>
+  count(country_code, year) |>
+  filter(n > 1)
+
+TB_duplicates
+
+# Check missing values
+TB_final |>
+  summarise(
+    missing_cases = sum(is.na(cases)),
+    missing_deaths = sum(is.na(deaths)),
+    missing_incidence = sum(is.na(incidence_rate)),
+    missing_mortality = sum(is.na(mortality_rate))
+  )
+
+# Check for negative values
+TB_final |>
+  summarise(
+    negative_cases = sum(cases < 0, na.rm = TRUE),
+    negative_deaths = sum(deaths < 0, na.rm = TRUE)
+  )
+```
+
+### Tuberculosis Variable Descriptions
+
+| Variable | Description |
+|---|---|
+| `disease` | Name of the disease |
+| `category` | Disease classification |
+| `country_code` | WHO geographic code, restricted to countries after filtering |
+| `year` | Year of observation |
+| `cases` | Estimated number of incident tuberculosis cases |
+| `deaths` | Estimated tuberculosis deaths, excluding HIV-positive people |
+| `incidence_rate` | Estimated TB cases per 100,000 population |
+| `mortality_rate` | Estimated TB deaths among HIV-negative people per 100,000 population |
+| `*_low` | Lower uncertainty bound for the corresponding indicator |
+| `*_high` | Upper uncertainty bound for the corresponding indicator |
+
+**Note:** WHO's tuberculosis mortality estimates used here exclude deaths among HIV-positive people. These statistics should not be interpreted as total tuberculosis mortality.
+
+## HIV Data Acquisition
+
+Cholera is a waterborne infectious disease that can cause severe diarrhea and dehydration. We retrieve cholera statistics from the WHO Global Health Observatory API.
+
+### Identify HIV Indicators
+
+```{r}
+# Retrieve WHO indicator catalog
+response <- request(
+  "https://ghoapi.azureedge.net/api/Indicator"
+) |>
+  req_perform()
+
+who_indicators <- response |>
+  resp_body_json(simplifyVector = TRUE)
+
+# Find HIV indicators
+hiv_indicators <- as_tibble(who_indicators$value) |>
+  filter(
+    str_detect(
+      IndicatorName,
+      regex("HIV|AIDS", ignore_case = TRUE)
+    )
+  ) |>
+  select(IndicatorCode, IndicatorName)
+
+# Display all matching indicators
+print(hiv_indicators, n = Inf)
+```
+
+```{r}
+# Number of new HIV infections
+HIV_cases <- get_who_data(
+  "HIV_0000000026", "cases"
+)
+
+# Number of HIV-related deaths
+HIV_deaths <- get_who_data(
+  "HIV_0000000006", "deaths"
+)
+
+# HIV incidence per 1,000 uninfected population
+HIV_incidence <- get_who_data(
+  "SDGHIV", "incidence_rate"
+)
+
+# HIV/AIDS mortality per 100,000 population
+HIV_mortality <- get_who_data(
+  "WHS2_138", "mortality_rate"
+)
+```
+
+```{r}
+# Combine all four HIV indicators
+HIV_final <- HIV_cases |>
+  full_join(
+    HIV_deaths,
+    by = c("country_code", "year")
+  ) |>
+  full_join(
+    HIV_incidence,
+    by = c("country_code", "year")
+  ) |>
+  full_join(
+    HIV_mortality,
+    by = c("country_code", "year")
+  ) |>
+  mutate(
+    disease = "HIV/AIDS",
+    category = "Other Major Pathogens"
+  ) |>
+  relocate(disease, category, country_code, year)
+
+
+HIV_final |>
+  filter(!is.na(deaths))
+
+glimpse(HIV_final)
+```
+
+
+```{r}
+# Number of observations
+nrow(HIV_final)
+
+# Check duplicate country-year combinations
+HIV_duplicates <- HIV_final |>
+  count(country_code, year) |>
+  filter(n > 1)
+
+HIV_duplicates
+
+# Check missing values
+HIV_final |>
+  summarise(
+    missing_cases = sum(is.na(cases)),
+    missing_deaths = sum(is.na(deaths)),
+    missing_incidence = sum(is.na(incidence_rate)),
+    missing_mortality = sum(is.na(mortality_rate))
+  )
+glimpse(HIV_final)
+```
+
+
+
+
+
