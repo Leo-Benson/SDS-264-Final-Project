@@ -5,7 +5,7 @@ format: html
 editor: visual
 ---
 
-## Introduction
+## Introductions
 
 This project collects infectious disease data from the World Health Organization (WHO) Global Health Observatory API. Our goal is to create a clean dataset containing cases, deaths, incidence rates, and mortality rates across countries and years. The data will also be used in our final interactive infectious disease dashboard.
 
