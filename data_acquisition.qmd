@@ -3,6 +3,8 @@
 title: "Global Infectious Disease Data Acquisition"
 format: html
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Introductions
@@ -52,22 +54,6 @@ get_who_data <- function(indicator_code, variable_name) {
 
   # Follow additional pages if WHO paginates the response
   records <- data$value
-
-  while (!is.null(data[["@odata.nextLink"]])) {
-
-    next_url <- data[["@odata.nextLink"]]
-
-    response <- request(next_url) |>
-      req_perform()
-
-    data <- response |>
-      resp_body_json(simplifyVector = TRUE)
-
-    records <- bind_rows(
-      as_tibble(records),
-      as_tibble(data$value)
-    )
-  }
 
   as_tibble(records) |>
     select(
