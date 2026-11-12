@@ -1,0 +1,207 @@
+
+---
+title: "Global Infectious Disease Data Acquisition"
+format: html
+editor: visual
+---
+
+## Introduction
+
+This project collects infectious disease data from the World Health Organization (WHO) Global Health Observatory API. Our goal is to create a clean dataset containing cases, deaths, incidence rates, and mortality rates across countries and years. The data will also be used in our final interactive infectious disease dashboard.
+
+Our initial focus is malaria, followed by tuberculosis and cholera.
+
+## Data Source
+
+We retrieve data from the [WHO Global Health Observatory API](https://www.who.int/data/gho/info/gho-odata-api) using the `httr2` package.
+
+### Load Packages
+
+```{r}
+library(tidyverse)
+library(httr2)
+```
+
+## Malaria Data Acquisition
+
+We collect four malaria indicators:
+
+- Estimated number of malaria cases
+- Estimated number of malaria deaths
+- Estimated malaria incidence per 1,000 population at risk
+- Estimated malaria mortality per 100,000 population
+
+### Retrieve Data from WHO
+
+We create a custom function to retrieve data from the WHO API. The function takes an indicator code and returns a tibble containing country, year, and the corresponding statistic.
+
+```{r}
+# Function to retrieve an indicator from the WHO API
+get_who_data <- function(indicator_code, variable_name) {
+
+  url <- paste0(
+    "https://ghoapi.azureedge.net/api/",
+    indicator_code
+  )
+
+  response <- request(url) |>
+    req_perform()
+
+  data <- response |>
+    resp_body_json(simplifyVector = TRUE)
+
+  # Follow additional pages if WHO paginates the response
+  records <- data$value
+
+  while (!is.null(data[["@odata.nextLink"]])) {
+
+    next_url <- data[["@odata.nextLink"]]
+
+    response <- request(next_url) |>
+      req_perform()
+
+    data <- response |>
+      resp_body_json(simplifyVector = TRUE)
+
+    records <- bind_rows(
+      as_tibble(records),
+      as_tibble(data$value)
+    )
+  }
+
+  as_tibble(records) |>
+    select(
+      country_code = SpatialDim,
+      year = TimeDim,
+      value = NumericValue,
+      low = Low,
+      high = High
+    ) |>
+    mutate(year = as.integer(year)) |>
+    rename_with(
+      ~ c(variable_name,
+          paste0(variable_name, "_low"),
+          paste0(variable_name, "_high")),
+      c(value, low, high)
+    )
+}
+```
+
+### Download Malaria Indicators
+
+```{r}
+# Estimated malaria cases
+malaria_cases <- get_who_data(
+  "MALARIA_EST_CASES", "cases"
+)
+
+# Estimated malaria deaths
+malaria_deaths <- get_who_data(
+  "MALARIA_EST_DEATHS", "deaths"
+)
+
+# Estimated malaria incidence
+malaria_incidence <- get_who_data(
+  "MALARIA_EST_INCIDENCE", "incidence_rate"
+)
+
+# Estimated malaria mortality
+malaria_mortality <- get_who_data(
+  "MALARIA_EST_MORTALITY", "mortality_rate"
+)
+```
+
+## Data Cleaning and Tidying
+
+We combine the four datasets using country codes and years. A `full_join()` preserves observations even when some indicators are unavailable.
+
+```{r}
+malaria_final <- malaria_cases |>
+  full_join(
+    malaria_deaths,
+    by = c("country_code", "year")
+  ) |>
+  full_join(
+    malaria_incidence,
+    by = c("country_code", "year")
+  ) |>
+  full_join(
+    malaria_mortality,
+    by = c("country_code", "year")
+  ) |>
+  mutate(
+    disease = "Malaria",
+    category = "Mosquito & Vector-Borne"
+  ) |>
+  relocate(disease, category, country_code, year)
+
+glimpse(malaria_final)
+```
+
+### Data Quality Checks
+
+We examine the number of observations, country coverage, years, duplicate records, and missing values.
+
+```{r}
+# Dataset summary
+malaria_final |>
+  summarise(
+    observations = n(),
+    countries = n_distinct(country_code),
+    first_year = min(year, na.rm = TRUE),
+    last_year = max(year, na.rm = TRUE)
+  )
+
+# Check for duplicate country-year combinations
+duplicates <- malaria_final |>
+  count(country_code, year) |>
+  filter(n > 1)
+
+duplicates
+
+# Check missing values
+malaria_final |>
+  summarise(
+    missing_cases = sum(is.na(cases)),
+    missing_deaths = sum(is.na(deaths)),
+    missing_incidence = sum(is.na(incidence_rate)),
+    missing_mortality = sum(is.na(mortality_rate))
+  )
+
+# Check for negative values
+malaria_final |>
+  summarise(
+    negative_cases = sum(cases < 0, na.rm = TRUE),
+    negative_deaths = sum(deaths < 0, na.rm = TRUE)
+  )
+```
+
+Missing values are retained as `NA` because unavailable statistics should not be interpreted as zero. We also preserve uncertainty bounds supplied by WHO.
+
+## Final Malaria Dataset
+
+The cleaned dataset contains one observation per country and year, provided the duplicate check returns no records.
+
+### Variable Descriptions
+
+| Variable | Description |
+|---|---|
+| `disease` | Name of the infectious disease |
+| `category` | Disease classification |
+| `country_code` | Three-letter country code |
+| `year` | Year of observation |
+| `cases` | Estimated number of malaria cases |
+| `deaths` | Estimated number of malaria deaths |
+| `incidence_rate` | Estimated cases per 1,000 population at risk |
+| `mortality_rate` | Estimated deaths per 100,000 population |
+| `*_low` | Lower uncertainty bound for the corresponding indicator |
+| `*_high` | Upper uncertainty bound for the corresponding indicator |
+
+## Ethical Data Acquisition
+
+The data are retrieved from WHO's publicly accessible Global Health Observatory API. We use documented API endpoints instead of scraping website content, and we preserve missing values and uncertainty bounds to avoid misrepresenting the statistics. API requests are limited to the indicators needed for our project.
+
+## Future Application
+
+The cleaned malaria dataset will be combined with tuberculosis and cholera data to support an interactive global infectious disease dashboard. Users will be able to explore disease statistics by country, year, and disease category.
+5
