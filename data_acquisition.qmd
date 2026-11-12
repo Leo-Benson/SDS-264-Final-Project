@@ -1,4 +1,3 @@
-
 ---
 title: "Global Infectious Disease Data Acquisition"
 format: html
@@ -179,18 +178,18 @@ The cleaned dataset contains one observation per country and year, provided the 
 
 ### Variable Descriptions
 
-| Variable | Description |
-|---|---|
-| `disease` | Name of the infectious disease |
-| `category` | Disease classification |
-| `country_code` | Three-letter country code |
-| `year` | Year of observation |
-| `cases` | Estimated number of malaria cases |
-| `deaths` | Estimated number of malaria deaths |
-| `incidence_rate` | Estimated cases per 1,000 population at risk |
-| `mortality_rate` | Estimated deaths per 100,000 population |
-| `*_low` | Lower uncertainty bound for the corresponding indicator |
-| `*_high` | Upper uncertainty bound for the corresponding indicator |
+| Variable         | Description                                             |
+|------------------|---------------------------------------------------------|
+| `disease`        | Name of the infectious disease                          |
+| `category`       | Disease classification                                  |
+| `country_code`   | Three-letter country code                               |
+| `year`           | Year of observation                                     |
+| `cases`          | Estimated number of malaria cases                       |
+| `deaths`         | Estimated number of malaria deaths                      |
+| `incidence_rate` | Estimated cases per 1,000 population at risk            |
+| `mortality_rate` | Estimated deaths per 100,000 population                 |
+| `*_low`          | Lower uncertainty bound for the corresponding indicator |
+| `*_high`         | Upper uncertainty bound for the corresponding indicator |
 
 ## Ethical Data Acquisition
 
@@ -299,7 +298,7 @@ TB_final |>
 ### Tuberculosis Variable Descriptions
 
 | Variable | Description |
-|---|---|
+|------------------------------------|------------------------------------|
 | `disease` | Name of the disease |
 | `category` | Disease classification |
 | `country_code` | WHO geographic code, restricted to countries after filtering |
@@ -334,7 +333,7 @@ hiv_indicators <- as_tibble(who_indicators$value) |>
   filter(
     str_detect(
       IndicatorName,
-      regex("HIV|AIDS", ignore_case = TRUE)
+      regex("HIV/AIDS|HIV", ignore_case = TRUE)
     )
   ) |>
   select(IndicatorCode, IndicatorName)
@@ -346,7 +345,7 @@ print(hiv_indicators, n = Inf)
 ```{r}
 # Number of new HIV infections
 HIV_cases <- get_who_data(
-  "HIV_0000000026", "cases"
+  "HIV_0000000001", "cases"
 )
 
 # Number of HIV-related deaths
@@ -394,16 +393,26 @@ glimpse(HIV_final)
 ```
 
 
-```{r}
-# Number of observations
-nrow(HIV_final)
+### Data Quality Checks
 
-# Check duplicate country-year combinations
+
+
+```{r}
+# Dataset summary
+HIV_final |>
+  summarise(
+    observations = n(),
+    countries = n_distinct(country_code),
+    first_year = min(year, na.rm = TRUE),
+    last_year = max(year, na.rm = TRUE)
+  )
+
+# Check for duplicate country-year observations
 HIV_duplicates <- HIV_final |>
   count(country_code, year) |>
   filter(n > 1)
 
-HIV_duplicates
+TB_duplicates
 
 # Check missing values
 HIV_final |>
@@ -413,10 +422,38 @@ HIV_final |>
     missing_incidence = sum(is.na(incidence_rate)),
     missing_mortality = sum(is.na(mortality_rate))
   )
-glimpse(HIV_final)
+
+# Check for negative values
+HIV_final |>
+  summarise(
+    negative_cases = sum(cases < 0, na.rm = TRUE),
+    negative_deaths = sum(deaths < 0, na.rm = TRUE)
+  )
 ```
 
 
+### HIV Variable Descriptions
 
+
+| Variable         | Description                                             |
+|------------------|---------------------------------------------------------|
+| `disease`        | Name of the infectious disease                          |
+| `category`       | Disease classification                                  |
+| `country_code`   | Three-letter country code                               |
+| `year`           | Year of observation                                     |
+| `cases`          | Estimated number of HIV cases                           |
+| `deaths`         | Estimated number of deaths due to HIV                   |
+| `incidence_rate` | Estimated cases per 1,000 uninfected population         |
+| `mortality_rate` | Estimated deaths per 100,000 population                 |
+| `*_low`          | Lower uncertainty bound for the corresponding indicator |
+| `*_high`         | Upper uncertainty bound for the corresponding indicator
+
+
+
+### Reading CSVs
+
+
+
+### Reflection of collaboration techniques
 
 
