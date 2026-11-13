@@ -1,66 +1,81 @@
 ---
-title: "Global Infectious Disease Data Acquisition"
+title: "Leo and Mohamed: Global Infectious Disease Data Acquisition"
 format: html
 editor: visual
 editor_options: 
   chunk_output_type: console
 ---
 
-## Introductions
+## Introduction
 
-This project collects infectious disease data from the World Health Organization (WHO) Global Health Observatory API. Our goal is to create a clean dataset containing cases, deaths, incidence rates, and mortality rates across countries and years. The data will also be used in our final interactive infectious disease dashboard.
 
-Our initial focus is malaria, followed by tuberculosis and cholera.
+This project collects infectious disease data from the World Health Organization (GHO) Global Health Observatory API. Our goal is to create a clean dataset containing cases, deaths, incidence rates, and mortality rates across countries and years. The data will also be used in our final interactive infectious disease dashboard.
+
+Our initial focus is malaria, followed by tuberculosis and HIV.
+
 
 ## Data Source
 
+
+
 We retrieve data from the [WHO Global Health Observatory API](https://www.who.int/data/gho/info/gho-odata-api) using the `httr2` package.
 
+
+
 ### Load Packages
+
+
 
 ```{r}
 library(tidyverse)
 library(httr2)
 ```
 
-## Malaria Data Acquisition
 
-We collect four malaria indicators:
 
-- Estimated number of malaria cases
-- Estimated number of malaria deaths
-- Estimated malaria incidence per 1,000 population at risk
-- Estimated malaria mortality per 100,000 population
+### Creating Function to Retrieve Data from WHO
 
-### Retrieve Data from WHO
+
 
 We create a custom function to retrieve data from the WHO API. The function takes an indicator code and returns a tibble containing country, year, and the corresponding statistic.
+
 
 ```{r}
 # Function to retrieve an indicator from the WHO API
 get_who_data <- function(indicator_code, variable_name) {
 
-  url <- paste0(
+  url <- str_c(
     "https://ghoapi.azureedge.net/api/",
     indicator_code
   )
 
+  
+#request API using specified indicator code  
+  
   response <- request(url) |>
     req_perform()
 
+
+#extract data from API response
+  
   data <- response |>
     resp_body_json(simplifyVector = TRUE)
 
-  # Follow additional pages if WHO paginates the response
   records <- data$value
+
+
+#filter data to only include countries and single observations instead of different data by sex
 
   as_tibble(records) |>
   filter(SpatialDimType == "COUNTRY") |>
     filter(
-      is.na(Dim1Type) |
+        is.na(Dim1Type) |
         Dim1Type != "SEX" |
         Dim1 == "SEX_BTSX"
     ) |>
+  
+#select + rename columns
+       
   select(
     country_code = SpatialDim,
     year = TimeDim,
@@ -68,6 +83,9 @@ get_who_data <- function(indicator_code, variable_name) {
     low = Low,
     high = High
   ) |>
+
+#make the time an integer instead of character and name columns by specified variable input + add low and high columns for interval values
+    
   mutate(year = as.integer(year)) |>
   rename_with(
     ~ c(variable_name,
@@ -78,7 +96,21 @@ get_who_data <- function(indicator_code, variable_name) {
 }
 ```
 
+
+
+## Malaria Data Acquisition
+
+
+
+Malaria is a life-threatening, mosquito-borne infectious disease caused by single-celled protozoan parasites. We scrape the variables of interest by locating the required API keys, using our function to obtain the clean data, and joining the variables together to create the final dataset. 
+
+
 ### Download Malaria Indicators
+
+
+
+First, we find relevant malaria API indicators using the GHO API index (usinghttps://ghoapi.azureedge.net/api/Indicator) by searching within the document for "malaria". We then use our function to obtain the variables of interest.
+
 
 ```{r}
 # Estimated malaria cases
@@ -102,9 +134,13 @@ malaria_mortality <- get_who_data(
 )
 ```
 
+
 ## Data Cleaning and Tidying
 
+
+
 We combine the four datasets using country codes and years. A `full_join()` preserves observations even when some indicators are unavailable.
+
 
 ```{r}
 malaria_final <- malaria_cases |>
@@ -132,9 +168,14 @@ glimpse(malaria_final)
 
 ```
 
+
+
 ### Data Quality Checks
 
+
+
 We examine the number of observations, country coverage, years, duplicate records, and missing values.
+
 
 ```{r}
 # Dataset summary
@@ -172,9 +213,21 @@ malaria_final |>
 
 Missing values are retained as `NA` because unavailable statistics should not be interpreted as zero. We also preserve uncertainty bounds supplied by WHO.
 
+There are no duplicates or negative values. There are a few countries missing incidence and mortality but a very small proportion compared to the total dataset.
+
+
+
 ## Final Malaria Dataset
 
-The cleaned dataset contains one observation per country and year, provided the duplicate check returns no records.
+The cleaned dataset contains one observation per country and year
+
+
+```{r}
+write_csv(malaria_final, "malaria.csv")
+```
+
+
+
 
 ### Variable Descriptions
 
@@ -191,21 +244,18 @@ The cleaned dataset contains one observation per country and year, provided the 
 | `*_low`          | Lower uncertainty bound for the corresponding indicator |
 | `*_high`         | Upper uncertainty bound for the corresponding indicator |
 
-## Ethical Data Acquisition
 
-The data are retrieved from WHO's publicly accessible Global Health Observatory API. We use documented API endpoints instead of scraping website content, and we preserve missing values and uncertainty bounds to avoid misrepresenting the statistics. API requests are limited to the indicators needed for our project.
-
-## Future Application
-
-The cleaned malaria dataset will be combined with tuberculosis and cholera data to support an interactive global infectious disease dashboard. Users will be able to explore disease statistics by country, year, and disease category.
 
 ## Tuberculosis Data Acquisition
 
-Tuberculosis (TB) is an infectious disease that primarily affects the lungs and spreads through the air. We retrieve estimated tuberculosis cases, deaths, incidence rates, and mortality rates from the WHO Global Health Observatory API.
+
+
+Tuberculosis (TB) is an infectious disease that primarily affects the lungs and spreads through the air. We follow the same process as before to obtain a dataset of TB data for countries over time.
+
+
 
 ### Download Tuberculosis Indicators
 
-We use the `get_who_data()` function defined earlier to retrieve four indicators.
 
 ```{r}
 # Estimated number of tuberculosis cases
@@ -229,9 +279,11 @@ TB_mortality <- get_who_data(
 )
 ```
 
+
+
 ## Tuberculosis Data Cleaning and Tidying
 
-We combine the four indicators by country and year using `full_join()`. This preserves country-year observations even when certain statistics are unavailable.
+
 
 ```{r}
 # Combine tuberculosis indicators
@@ -257,9 +309,11 @@ TB_final <- TB_cases |>
 glimpse(TB_final)
 ```
 
+
+
 ### Data Quality Checks
 
-We examine the dataset's coverage, check for duplicate country-year observations, and identify missing or negative values.
+
 
 ```{r}
 # Dataset summary
@@ -295,52 +349,64 @@ TB_final |>
   )
 ```
 
+
+There are no duplicates or negative values. There are 489 countries missing death and mortality rate.
+
+
+
+## Final Tuberculosis Dataset
+
+The cleaned dataset contains one observation per country and year
+
+
+```{r}
+write_csv(TB_final, "tuberculosis.csv")
+```
+
+
+
 ### Tuberculosis Variable Descriptions
+
+
 
 | Variable | Description |
 |------------------------------------|------------------------------------|
-| `disease` | Name of the disease |
-| `category` | Disease classification |
-| `country_code` | WHO geographic code, restricted to countries after filtering |
-| `year` | Year of observation |
-| `cases` | Estimated number of incident tuberculosis cases |
-| `deaths` | Estimated tuberculosis deaths, excluding HIV-positive people |
-| `incidence_rate` | Estimated TB cases per 100,000 population |
-| `mortality_rate` | Estimated TB deaths among HIV-negative people per 100,000 population |
-| `*_low` | Lower uncertainty bound for the corresponding indicator |
-| `*_high` | Upper uncertainty bound for the corresponding indicator |
+| `disease` | Name of the disease 
+|
+| `category` | Disease classification 
+|
+| `country_code` | WHO geographic code, restricted to countries 
+|
+| `year` | Year of observation 
+|
+| `cases` | Estimated number of incident tuberculosis cases 
+|
+| `deaths` | Estimated tuberculosis deaths, excluding HIV-positive people 
+|
+| `incidence_rate` | Estimated TB cases per 100,000 population 
+|
+| `mortality_rate` | Estimated TB deaths among HIV-negative people per 100,000 population 
+|
+| `*_low` | Lower uncertainty bound for the corresponding indicator 
+|
+| `*_high` | Upper uncertainty bound for the corresponding indicator 
+|
 
-**Note:** WHO's tuberculosis mortality estimates used here exclude deaths among HIV-positive people. These statistics should not be interpreted as total tuberculosis mortality.
+
+WHO's tuberculosis mortality estimates used here exclude deaths among HIV-positive people.
+
+
 
 ## HIV Data Acquisition
 
-Cholera is a waterborne infectious disease that can cause severe diarrhea and dehydration. We retrieve cholera statistics from the WHO Global Health Observatory API.
 
-### Identify HIV Indicators
 
-```{r}
-# Retrieve WHO indicator catalog
-response <- request(
-  "https://ghoapi.azureedge.net/api/Indicator"
-) |>
-  req_perform()
+Human Immunodeficiency Virus (HIV) is a retrovirus transmitted through bodily fluid that attacks and destroys the body's infection-fighting CD4 white blood cells, weakening the immune system.
 
-who_indicators <- response |>
-  resp_body_json(simplifyVector = TRUE)
 
-# Find HIV indicators
-hiv_indicators <- as_tibble(who_indicators$value) |>
-  filter(
-    str_detect(
-      IndicatorName,
-      regex("HIV/AIDS|HIV", ignore_case = TRUE)
-    )
-  ) |>
-  select(IndicatorCode, IndicatorName)
 
-# Display all matching indicators
-print(hiv_indicators, n = Inf)
-```
+### Download HIV/AIDS Indicators
+
 
 ```{r}
 # Number of new HIV infections
@@ -385,12 +451,8 @@ HIV_final <- HIV_cases |>
   ) |>
   relocate(disease, category, country_code, year)
 
-
-HIV_final |>
-  filter(!is.na(deaths))
-
-glimpse(HIV_final)
 ```
+
 
 
 ### Data Quality Checks
@@ -412,7 +474,7 @@ HIV_duplicates <- HIV_final |>
   count(country_code, year) |>
   filter(n > 1)
 
-TB_duplicates
+HIV_duplicates
 
 # Check missing values
 HIV_final |>
@@ -430,6 +492,22 @@ HIV_final |>
     negative_deaths = sum(deaths < 0, na.rm = TRUE)
   )
 ```
+
+
+
+There are no duplicates or negative values. There are a lot of missing mortality rates in the data which could make visualization of this data difficult.
+
+
+
+## Final HIV Dataset
+
+The cleaned dataset contains one observation per country and year.
+
+
+```{r}
+write_csv(HIV_final, "HIV.csv")
+```
+
 
 
 ### HIV Variable Descriptions
@@ -450,10 +528,24 @@ HIV_final |>
 
 
 
-### Reading CSVs
+## Ethical Data Acquisition Reflection
+
+
+Our data is retrieved from WHO's publicly accessible Global Health Observatory API. As we obtained our data, We use documented API endpoints instead of directly scraping website content. We also preserve missing values and uncertainty bounds to avoid misrepresenting the statistics. Although we don't plan to use the high and low uncertainty bounds in our plotting, they are a strong representation of the variability in global estimates, which we will address in our final project. Lastly, our API requests were limited to only the indicators needed for our project.
 
 
 
-### Reflection of collaboration techniques
+## Reflection of collaboration techniques
+
+
+As we worked on data scraping, it worked best for us to work side by side and talk through what we were doing. We toyed around with creating separate branches for different edits but found that it worked best to discuss edits and go one at a time. After one of us had made a change, we ensured to pull the changes before editing again. Clearly communicating these steps made collaboration easy. Going forward, relying on discussing changes in person may not be sustainable so we will look into utilizing more github collaboration skills. Using branches, issues, and pull requests will make editing remotely smooth and organized.
+
+
+
+
+## Future Application
+
+
+The datasets we created are a great start as we plan our interactive global disease dashboard. Moving forward, we suspect that combining the three datasets could make comparison between the statistics easier to visualize. Doing so will require merging and filtering to include countries with statistics for all three diseases. Additionally, as we think about creating choropleth maps, finding ways to join polygon data for each country is a next step that could require some renaming (country code to full name) and joining. Lastly, scraping some basic data on the quality of life and economy of each country over time could be an additional layer of complexity to help make our dashboard more engaging. For now, we have the data to see how three of the most widespread global diseases have spread over time.
 
 

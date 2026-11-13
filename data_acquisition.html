@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.10.19">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -71,10 +71,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="data_acquisition_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="data_acquisition_files/libs/quarto-html/anchor.min.js"></script>
 <link href="data_acquisition_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="data_acquisition_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="data_acquisition_files/libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="data_acquisition_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="data_acquisition_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="data_acquisition_files/libs/bootstrap/bootstrap-917079515d91bccb85b543faf8aa8bb6.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="data_acquisition_files/libs/bootstrap/bootstrap-215b371544c282197b31c8aa00ce3677.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
 
 </head>
@@ -106,8 +106,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>This project collects infectious disease data from the World Health Organization (WHO) Global Health Observatory API. Our goal is to create a clean dataset containing cases, deaths, incidence rates, and mortality rates across countries and years. The data will also be used in our final interactive infectious disease dashboard.</p>
-<p>Our initial focus is malaria, followed by tuberculosis and cholera.</p>
+<p>This project collects infectious disease data from the World Health Organization (GHO) Global Health Observatory API. Our goal is to create a clean dataset containing cases, deaths, incidence rates, and mortality rates across countries and years. The data will also be used in our final interactive infectious disease dashboard.</p>
+<p>Our initial focus is malaria, followed by tuberculosis and HIV.</p>
 </section>
 <section id="data-source" class="level2">
 <h2 class="anchored" data-anchor-id="data-source">Data Source</h2>
@@ -131,73 +131,72 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(httr2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-</section>
-<section id="malaria-data-acquisition" class="level2">
-<h2 class="anchored" data-anchor-id="malaria-data-acquisition">Malaria Data Acquisition</h2>
-<p>We collect four malaria indicators:</p>
-<ul>
-<li>Estimated number of malaria cases</li>
-<li>Estimated number of malaria deaths</li>
-<li>Estimated malaria incidence per 1,000 population at risk</li>
-<li>Estimated malaria mortality per 100,000 population</li>
-</ul>
-<section id="retrieve-data-from-who" class="level3">
-<h3 class="anchored" data-anchor-id="retrieve-data-from-who">Retrieve Data from WHO</h3>
+<section id="creating-function-to-retrieve-data-from-who" class="level3">
+<h3 class="anchored" data-anchor-id="creating-function-to-retrieve-data-from-who">Creating Function to Retrieve Data from WHO</h3>
 <p>We create a custom function to retrieve data from the WHO API. The function takes an indicator code and returns a tibble containing country, year, and the corresponding statistic.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Function to retrieve an indicator from the WHO API</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>get_who_data <span class="ot">&lt;-</span> <span class="cf">function</span>(indicator_code, variable_name) {</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">str_c</span>(</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://ghoapi.azureedge.net/api/"</span>,</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    indicator_code</span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  response <span class="ot">&lt;-</span> <span class="fu">request</span>(url) <span class="sc">|&gt;</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">req_perform</span>()</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> response <span class="sc">|&gt;</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">resp_body_json</span>(<span class="at">simplifyVector =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#request API using specified indicator code  </span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  response <span class="ot">&lt;-</span> <span class="fu">request</span>(url) <span class="sc">|&gt;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">req_perform</span>()</span>
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Follow additional pages if WHO paginates the response</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  records <span class="ot">&lt;-</span> data<span class="sc">$</span>value</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="sc">!</span><span class="fu">is.null</span>(data[[<span class="st">"@odata.nextLink"</span>]])) {</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    next_url <span class="ot">&lt;-</span> data[[<span class="st">"@odata.nextLink"</span>]]</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    response <span class="ot">&lt;-</span> <span class="fu">request</span>(next_url) <span class="sc">|&gt;</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">req_perform</span>()</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    data <span class="ot">&lt;-</span> response <span class="sc">|&gt;</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>      <span class="fu">resp_body_json</span>(<span class="at">simplifyVector =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    records <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as_tibble</span>(records),</span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as_tibble</span>(data<span class="sc">$</span>value)</span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(records) <span class="sc">|&gt;</span></span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(</span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>      <span class="at">country_code =</span> SpatialDim,</span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>      <span class="at">year =</span> TimeDim,</span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>      <span class="at">value =</span> NumericValue,</span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>      <span class="at">low =</span> Low,</span>
-<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>      <span class="at">high =</span> High</span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">as.integer</span>(year)) <span class="sc">|&gt;</span></span>
-<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename_with</span>(</span>
-<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="fu">c</span>(variable_name,</span>
-<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>          <span class="fu">paste0</span>(variable_name, <span class="st">"_low"</span>),</span>
-<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>          <span class="fu">paste0</span>(variable_name, <span class="st">"_high"</span>)),</span>
-<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>      <span class="fu">c</span>(value, low, high)</span>
-<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#extract data from API response</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> response <span class="sc">|&gt;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">resp_body_json</span>(<span class="at">simplifyVector =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  records <span class="ot">&lt;-</span> data<span class="sc">$</span>value</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#filter data to only include countries and single observations instead of different data by sex</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(records) <span class="sc">|&gt;</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(SpatialDimType <span class="sc">==</span> <span class="st">"COUNTRY"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>        <span class="fu">is.na</span>(Dim1Type) <span class="sc">|</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        Dim1Type <span class="sc">!=</span> <span class="st">"SEX"</span> <span class="sc">|</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        Dim1 <span class="sc">==</span> <span class="st">"SEX_BTSX"</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#select + rename columns</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>       </span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">country_code =</span> SpatialDim,</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> TimeDim,</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">value =</span> NumericValue,</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">low =</span> Low,</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">high =</span> High</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="co">#make the time an integer instead of character and name columns by specified variable input + add low and high columns for interval values</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">as.integer</span>(year)) <span class="sc">|&gt;</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_with</span>(</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">c</span>(variable_name,</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>        <span class="fu">paste0</span>(variable_name, <span class="st">"_low"</span>),</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>        <span class="fu">paste0</span>(variable_name, <span class="st">"_high"</span>)),</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(value, low, high)</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
+</section>
+<section id="malaria-data-acquisition" class="level2">
+<h2 class="anchored" data-anchor-id="malaria-data-acquisition">Malaria Data Acquisition</h2>
+<p>Malaria is a life-threatening, mosquito-borne infectious disease caused by single-celled protozoan parasites. We scrape the variables of interest by locating the required API keys, using our function to obtain the clean data, and joining the variables together to create the final dataset.</p>
 <section id="download-malaria-indicators" class="level3">
 <h3 class="anchored" data-anchor-id="download-malaria-indicators">Download Malaria Indicators</h3>
+<p>First, we find relevant malaria API indicators using the GHO API index (usinghttps://ghoapi.azureedge.net/api/Indicator) by searching within the document for “malaria”. We then use our function to obtain the variables of interest.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimated malaria cases</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>malaria_cases <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
@@ -246,24 +245,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(malaria_final)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Rows: 2,898
+<pre><code>Rows: 2,723
 Columns: 16
 $ disease             &lt;chr&gt; "Malaria", "Malaria", "Malaria", "Malaria", "Malar…
 $ category            &lt;chr&gt; "Mosquito &amp; Vector-Borne", "Mosquito &amp; Vector-Born…
-$ country_code        &lt;chr&gt; "AFR", "PHL", "CIV", "RWA", "PER", "GNB", "MDG", "…
-$ year                &lt;int&gt; 2018, 2008, 2019, 2018, 2022, 2024, 2010, 2014, 20…
-$ cases               &lt;dbl&gt; 224690796, 74621, 8253903, 5963859, 35740, 242430,…
-$ cases_low           &lt;dbl&gt; 208000000, 50000, 5950000, 4506000, 29000, 67000, …
-$ cases_high          &lt;dbl&gt; 244000000, 103000, 11140000, 7500000, 42000, 65100…
-$ deaths              &lt;dbl&gt; 551673, 144, 11329, 3143, 27, 897, 2441, 778, 23, …
-$ deaths_low          &lt;dbl&gt; 514000, 60, 10200, 2980, 13, 770, 940, 660, NA, 40…
-$ deaths_high         &lt;dbl&gt; 624000, 260, 12600, 3380, 42, 1120, 4990, 930, NA,…
-$ incidence_rate      &lt;dbl&gt; 235.372226, 1.386974, 292.764174, 477.567338, 2.71…
-$ incidence_rate_low  &lt;dbl&gt; 217.6889625, 0.9240234, 211.0393892, 360.7913572, …
-$ incidence_rate_high &lt;dbl&gt; 255.579132, 1.911165, 395.014062, 600.552597, 3.22…
-$ mortality_rate      &lt;dbl&gt; 57.7898623, 0.2676516, 40.1837207, 25.1681695, 0.2…
-$ mortality_rate_low  &lt;dbl&gt; 53.83435752, 0.11152150, 36.12243021, 23.85490835,…
-$ mortality_rate_high &lt;dbl&gt; 65.3815325, 0.4906946, 44.6990245, 27.0499766, 0.3…</code></pre>
+$ country_code        &lt;chr&gt; "CPV", "THA", "GNQ", "SDN", "GTM", "LAO", "CHN", "…
+$ year                &lt;int&gt; 2009, 2002, 2002, 2011, 2007, 2012, 2005, 2017, 20…
+$ cases               &lt;dbl&gt; 65, 44555, 259369, 1157720, 17992, 79939, 21936, 1…
+$ cases_low           &lt;dbl&gt; NA, NA, 175000, 882000, 16000, 58000, NA, 994000, …
+$ cases_high          &lt;dbl&gt; NA, NA, 372000, 1489000, 21000, 106000, NA, 315500…
+$ deaths              &lt;dbl&gt; 2, 361, 495, 2963, 6, 174, 48, 4978, 8961, 2, 7365…
+$ deaths_low          &lt;dbl&gt; NA, NA, 460, 1300, 2, 74, NA, 4280, 8010, NA, 2840…
+$ deaths_high         &lt;dbl&gt; NA, NA, 540, 5080, 11, 310, NA, 5800, 10000, NA, 1…
+$ incidence_rate      &lt;dbl&gt; 0.49393599, 3.65348722, 325.04132430, 32.03359659,…
+$ incidence_rate_low  &lt;dbl&gt; 0.49393599, 3.65348722, 219.14485990, 24.41749639,…
+$ incidence_rate_high &lt;dbl&gt; 0.49393599, 3.65348722, 465.93976870, 41.19503588,…
+$ mortality_rate      &lt;dbl&gt; 1.51980303, 2.96018154, 62.03341784, 8.19848899, 0…
+$ mortality_rate_low  &lt;dbl&gt; 1.519803e+00, 2.960182e+00, 5.827382e+01, 3.591508…
+$ mortality_rate_high &lt;dbl&gt; 1.51980303, 2.96018154, 67.04621928, 14.04790198, …</code></pre>
 </div>
 </div>
 <section id="data-quality-checks" class="level3">
@@ -282,7 +281,7 @@ $ mortality_rate_high &lt;dbl&gt; 65.3815325, 0.4906946, 44.6990245, 27.0499766,
 <pre><code># A tibble: 1 × 4
   observations countries first_year last_year
          &lt;int&gt;     &lt;int&gt;      &lt;int&gt;     &lt;int&gt;
-1         2898       117       2000      2024</code></pre>
+1         2723       110       2000      2024</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for duplicate country-year combinations</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>duplicates <span class="ot">&lt;-</span> malaria_final <span class="sc">|&gt;</span></span>
@@ -322,14 +321,22 @@ $ mortality_rate_high &lt;dbl&gt; 65.3815325, 0.4906946, 44.6990245, 27.0499766,
 </div>
 </div>
 <p>Missing values are retained as <code>NA</code> because unavailable statistics should not be interpreted as zero. We also preserve uncertainty bounds supplied by WHO.</p>
+<p>There are no duplicates or negative values. There are a few countries missing incidence and mortality but a very small proportion compared to the total dataset.</p>
 </section>
 </section>
 <section id="final-malaria-dataset" class="level2">
 <h2 class="anchored" data-anchor-id="final-malaria-dataset">Final Malaria Dataset</h2>
-<p>The cleaned dataset contains one observation per country and year, provided the duplicate check returns no records.</p>
+<p>The cleaned dataset contains one observation per country and year</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(malaria_final, <span class="st">"malaria.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 <section id="variable-descriptions" class="level3">
 <h3 class="anchored" data-anchor-id="variable-descriptions">Variable Descriptions</h3>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 76%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Variable</th>
@@ -381,13 +388,421 @@ $ mortality_rate_high &lt;dbl&gt; 65.3815325, 0.4906946, 44.6990245, 27.0499766,
 </table>
 </section>
 </section>
-<section id="ethical-data-acquisition" class="level2">
-<h2 class="anchored" data-anchor-id="ethical-data-acquisition">Ethical Data Acquisition</h2>
-<p>The data are retrieved from WHO’s publicly accessible Global Health Observatory API. We use documented API endpoints instead of scraping website content, and we preserve missing values and uncertainty bounds to avoid misrepresenting the statistics. API requests are limited to the indicators needed for our project.</p>
+<section id="tuberculosis-data-acquisition" class="level2">
+<h2 class="anchored" data-anchor-id="tuberculosis-data-acquisition">Tuberculosis Data Acquisition</h2>
+<p>Tuberculosis (TB) is an infectious disease that primarily affects the lungs and spreads through the air. We follow the same process as before to obtain a dataset of TB data for countries over time.</p>
+<section id="download-tuberculosis-indicators" class="level3">
+<h3 class="anchored" data-anchor-id="download-tuberculosis-indicators">Download Tuberculosis Indicators</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimated number of tuberculosis cases</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>TB_cases <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"TB_e_inc_num"</span>, <span class="st">"cases"</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimated tuberculosis deaths (excluding HIV-positive people)</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>TB_deaths <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"TB_e_mort_exc_tbhiv_num"</span>, <span class="st">"deaths"</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Tuberculosis incidence per 100,000 population</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>TB_incidence <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MDG_0000000020"</span>, <span class="st">"incidence_rate"</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Tuberculosis mortality among HIV-negative people</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>TB_mortality <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MDG_0000000017"</span>, <span class="st">"mortality_rate"</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="tuberculosis-data-cleaning-and-tidying" class="level2">
+<h2 class="anchored" data-anchor-id="tuberculosis-data-cleaning-and-tidying">Tuberculosis Data Cleaning and Tidying</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine tuberculosis indicators</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>TB_final <span class="ot">&lt;-</span> TB_cases <span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    TB_deaths,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"country_code"</span>, <span class="st">"year"</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    TB_incidence,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"country_code"</span>, <span class="st">"year"</span>)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    TB_mortality,</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"country_code"</span>, <span class="st">"year"</span>)</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">disease =</span> <span class="st">"Tuberculosis"</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">category =</span> <span class="st">"Airborne &amp; Respiratory"</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(disease, category, country_code, year)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(TB_final)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 5,039
+Columns: 16
+$ disease             &lt;chr&gt; "Tuberculosis", "Tuberculosis", "Tuberculosis", "T…
+$ category            &lt;chr&gt; "Airborne &amp; Respiratory", "Airborne &amp; Respiratory"…
+$ country_code        &lt;chr&gt; "AFG", "AFG", "AFG", "AFG", "AFG", "AFG", "AFG", "…
+$ year                &lt;int&gt; 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 20…
+$ cases               &lt;dbl&gt; 30000, 31000, 34000, 37000, 40000, 43000, 46000, 4…
+$ cases_low           &lt;dbl&gt; 13000, 14000, 17000, 19000, 21000, 24000, 27000, 2…
+$ cases_high          &lt;dbl&gt; 464000, 334000, 265000, 221000, 188000, 165000, 15…
+$ deaths              &lt;dbl&gt; 10000, 9300, 9000, 10000, 9800, 9600, 9500, 9100, …
+$ deaths_low          &lt;dbl&gt; 6300, 6100, 6000, 7100, 6700, 6700, 6700, 6500, 73…
+$ deaths_high         &lt;dbl&gt; 14000, 13000, 13000, 15000, 13000, 13000, 13000, 1…
+$ incidence_rate      &lt;dbl&gt; 148, 153, 158, 164, 169, 175, 180, 185, 190, 194, …
+$ incidence_rate_low  &lt;dbl&gt; 65, 71, 78, 84, 91, 98, 104, 111, 116, 122, 126, 1…
+$ incidence_rate_high &lt;dbl&gt; 2310, 1650, 1240, 974, 797, 676, 592, 532, 488, 45…
+$ mortality_rate      &lt;dbl&gt; 49, 46, 42, 46, 41, 39, 37, 35, 39, 45, 45, 48, 50…
+$ mortality_rate_low  &lt;dbl&gt; 32, 30, 28, 31, 29, 28, 26, 25, 28, 32, 32, 34, 36…
+$ mortality_rate_high &lt;dbl&gt; 71, 65, 59, 64, 57, 53, 50, 47, 52, 61, 61, 65, 67…</code></pre>
+</div>
+</div>
+<section id="data-quality-checks-1" class="level3">
+<h3 class="anchored" data-anchor-id="data-quality-checks-1">Data Quality Checks</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Dataset summary</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>TB_final <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">observations =</span> <span class="fu">n</span>(),</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">countries =</span> <span class="fu">n_distinct</span>(country_code),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">first_year =</span> <span class="fu">min</span>(year, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">last_year =</span> <span class="fu">max</span>(year, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  observations countries first_year last_year
+         &lt;int&gt;     &lt;int&gt;      &lt;int&gt;     &lt;int&gt;
+1         5039       197       2000      2025</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for duplicate country-year observations</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>TB_duplicates <span class="ot">&lt;-</span> TB_final <span class="sc">|&gt;</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(country_code, year) <span class="sc">|&gt;</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>TB_duplicates</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 0 × 3
+# ℹ 3 variables: country_code &lt;chr&gt;, year &lt;int&gt;, n &lt;int&gt;</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check missing values</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>TB_final <span class="sc">|&gt;</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_cases =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(cases)),</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_deaths =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(deaths)),</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_incidence =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(incidence_rate)),</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_mortality =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(mortality_rate))</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  missing_cases missing_deaths missing_incidence missing_mortality
+          &lt;int&gt;          &lt;int&gt;             &lt;int&gt;             &lt;int&gt;
+1            26            489                26               489</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for negative values</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>TB_final <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">negative_cases =</span> <span class="fu">sum</span>(cases <span class="sc">&lt;</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">negative_deaths =</span> <span class="fu">sum</span>(deaths <span class="sc">&lt;</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  negative_cases negative_deaths
+           &lt;int&gt;           &lt;int&gt;
+1              0               0</code></pre>
+</div>
+</div>
+<p>There are no duplicates or negative values. There are 489 countries missing death and mortality rate.</p>
+</section>
+</section>
+<section id="final-tuberculosis-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="final-tuberculosis-dataset">Final Tuberculosis Dataset</h2>
+<p>The cleaned dataset contains one observation per country and year</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(TB_final, <span class="st">"tuberculosis.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="tuberculosis-variable-descriptions" class="level3">
+<h3 class="anchored" data-anchor-id="tuberculosis-variable-descriptions">Tuberculosis Variable Descriptions</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>disease</code></td>
+<td>Name of the disease</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>category</code></td>
+<td>Disease classification</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>country_code</code></td>
+<td>WHO geographic code, restricted to countries</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>year</code></td>
+<td>Year of observation</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>cases</code></td>
+<td>Estimated number of incident tuberculosis cases</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>deaths</code></td>
+<td>Estimated tuberculosis deaths, excluding HIV-positive people</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>incidence_rate</code></td>
+<td>Estimated TB cases per 100,000 population</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>mortality_rate</code></td>
+<td>Estimated TB deaths among HIV-negative people per 100,000 population</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>*_low</code></td>
+<td>Lower uncertainty bound for the corresponding indicator</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>*_high</code></td>
+<td>Upper uncertainty bound for the corresponding indicator</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>WHO’s tuberculosis mortality estimates used here exclude deaths among HIV-positive people.</p>
+</section>
+</section>
+<section id="hiv-data-acquisition" class="level2">
+<h2 class="anchored" data-anchor-id="hiv-data-acquisition">HIV Data Acquisition</h2>
+<p>Human Immunodeficiency Virus (HIV) is a retrovirus transmitted through bodily fluid that attacks and destroys the body’s infection-fighting CD4 white blood cells, weakening the immune system.</p>
+<section id="download-hivaids-indicators" class="level3">
+<h3 class="anchored" data-anchor-id="download-hivaids-indicators">Download HIV/AIDS Indicators</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of new HIV infections</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>HIV_cases <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"HIV_0000000001"</span>, <span class="st">"cases"</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of HIV-related deaths</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>HIV_deaths <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"HIV_0000000006"</span>, <span class="st">"deaths"</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a><span class="co"># HIV incidence per 1,000 uninfected population</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>HIV_incidence <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>  <span class="st">"SDGHIV"</span>, <span class="st">"incidence_rate"</span></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a><span class="co"># HIV/AIDS mortality per 100,000 population</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>HIV_mortality <span class="ot">&lt;-</span> <span class="fu">get_who_data</span>(</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>  <span class="st">"WHS2_138"</span>, <span class="st">"mortality_rate"</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine all four HIV indicators</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>HIV_final <span class="ot">&lt;-</span> HIV_cases <span class="sc">|&gt;</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    HIV_deaths,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"country_code"</span>, <span class="st">"year"</span>)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    HIV_incidence,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"country_code"</span>, <span class="st">"year"</span>)</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    HIV_mortality,</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"country_code"</span>, <span class="st">"year"</span>)</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">disease =</span> <span class="st">"HIV/AIDS"</span>,</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">category =</span> <span class="st">"Other Major Pathogens"</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(disease, category, country_code, year)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="data-quality-checks-2" class="level3">
+<h3 class="anchored" data-anchor-id="data-quality-checks-2">Data Quality Checks</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Dataset summary</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>HIV_final <span class="sc">|&gt;</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">observations =</span> <span class="fu">n</span>(),</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">countries =</span> <span class="fu">n_distinct</span>(country_code),</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">first_year =</span> <span class="fu">min</span>(year, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">last_year =</span> <span class="fu">max</span>(year, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  observations countries first_year last_year
+         &lt;int&gt;     &lt;int&gt;      &lt;int&gt;     &lt;int&gt;
+1         5118       158       1990      2025</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for duplicate country-year observations</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>HIV_duplicates <span class="ot">&lt;-</span> HIV_final <span class="sc">|&gt;</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(country_code, year) <span class="sc">|&gt;</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>HIV_duplicates</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 0 × 3
+# ℹ 3 variables: country_code &lt;chr&gt;, year &lt;int&gt;, n &lt;int&gt;</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check missing values</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>HIV_final <span class="sc">|&gt;</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_cases =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(cases)),</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_deaths =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(deaths)),</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_incidence =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(incidence_rate)),</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_mortality =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(mortality_rate))</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  missing_cases missing_deaths missing_incidence missing_mortality
+          &lt;int&gt;          &lt;int&gt;             &lt;int&gt;             &lt;int&gt;
+1          1408           1512               128              4936</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for negative values</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>HIV_final <span class="sc">|&gt;</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">negative_cases =</span> <span class="fu">sum</span>(cases <span class="sc">&lt;</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">negative_deaths =</span> <span class="fu">sum</span>(deaths <span class="sc">&lt;</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  negative_cases negative_deaths
+           &lt;int&gt;           &lt;int&gt;
+1              0               0</code></pre>
+</div>
+</div>
+<p>There are no duplicates or negative values. There are a lot of missing mortality rates in the data which could make visualization of this data difficult.</p>
+</section>
+</section>
+<section id="final-hiv-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="final-hiv-dataset">Final HIV Dataset</h2>
+<p>The cleaned dataset contains one observation per country and year.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(HIV_final, <span class="st">"HIV.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="hiv-variable-descriptions" class="level3">
+<h3 class="anchored" data-anchor-id="hiv-variable-descriptions">HIV Variable Descriptions</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>disease</code></td>
+<td>Name of the infectious disease</td>
+</tr>
+<tr class="even">
+<td><code>category</code></td>
+<td>Disease classification</td>
+</tr>
+<tr class="odd">
+<td><code>country_code</code></td>
+<td>Three-letter country code</td>
+</tr>
+<tr class="even">
+<td><code>year</code></td>
+<td>Year of observation</td>
+</tr>
+<tr class="odd">
+<td><code>cases</code></td>
+<td>Estimated number of HIV cases</td>
+</tr>
+<tr class="even">
+<td><code>deaths</code></td>
+<td>Estimated number of deaths due to HIV</td>
+</tr>
+<tr class="odd">
+<td><code>incidence_rate</code></td>
+<td>Estimated cases per 1,000 uninfected population</td>
+</tr>
+<tr class="even">
+<td><code>mortality_rate</code></td>
+<td>Estimated deaths per 100,000 population</td>
+</tr>
+<tr class="odd">
+<td><code>*_low</code></td>
+<td>Lower uncertainty bound for the corresponding indicator</td>
+</tr>
+<tr class="even">
+<td><code>*_high</code></td>
+<td>Upper uncertainty bound for the corresponding indicator</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="ethical-data-acquisition-reflection" class="level2">
+<h2 class="anchored" data-anchor-id="ethical-data-acquisition-reflection">Ethical Data Acquisition Reflection</h2>
+<p>Our data is retrieved from WHO’s publicly accessible Global Health Observatory API. As we obtained our data, We use documented API endpoints instead of directly scraping website content. We also preserve missing values and uncertainty bounds to avoid misrepresenting the statistics. Although we don’t plan to use the high and low uncertainty bounds in our plotting, they are a strong representation of the variability in global estimates, which we will address in our final project. Lastly, our API requests were limited to only the indicators needed for our project.</p>
+</section>
+<section id="reflection-of-collaboration-techniques" class="level2">
+<h2 class="anchored" data-anchor-id="reflection-of-collaboration-techniques">Reflection of collaboration techniques</h2>
+<p>As we worked on data scraping, it worked best for us to work side by side and talk through what we were doing. We toyed around with creating separate branches for different edits but found that it worked best to discuss edits and go one at a time. After one of us had made a change, we ensured to pull the changes before editing again. Clearly communicating these steps made collaboration easy. Going forward, relying on discussing changes in person may not be sustainable so we will look into utilizing more github collaboration skills. Using branches, issues, and pull requests will make editing remotely smooth and organized.</p>
 </section>
 <section id="future-application" class="level2">
 <h2 class="anchored" data-anchor-id="future-application">Future Application</h2>
-<p>The cleaned malaria dataset will be combined with tuberculosis and cholera data to support an interactive global infectious disease dashboard. Users will be able to explore disease statistics by country, year, and disease category.</p>
+<p>The datasets we created are a great start as we plan our interactive global disease dashboard. Moving forward, we suspect that combining the three datasets could make comparison between the statistics easier to visualize. Doing so will require merging and filtering to include countries with statistics for all three diseases. Additionally, as we think about creating choropleth maps, finding ways to join polygon data for each country is a next step that could require some renaming (country code to full name) and joining. Lastly, scraping some basic data on the quality of life and economy of each country over time could be an additional layer of complexity to help make our dashboard more engaging. For now, we have the data to see how three of the most widespread global diseases have spread over time.</p>
 </section>
 
 </main>
